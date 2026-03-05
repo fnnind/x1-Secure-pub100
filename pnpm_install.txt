@@ -1,0 +1,69 @@
+Progress: resolved 1, reused 0, downloaded 0, added 0
+ WARN  deprecated path-match@1.2.4: This package is archived and no longer maintained. For support, visit https://github.com/expressjs/express/discussions
+Progress: resolved 121, reused 96, downloaded 21, added 0
+Progress: resolved 374, reused 284, downloaded 68, added 0
+Progress: resolved 694, reused 498, downloaded 96, added 0
+Progress: resolved 935, reused 704, downloaded 107, added 0
+ WARN  1 deprecated subdependencies found: tar@7.5.7
+Packages: +807
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 937, reused 706, downloaded 107, added 308
+Progress: resolved 937, reused 706, downloaded 107, added 735
+Progress: resolved 937, reused 706, downloaded 107, added 807, done
+
+dependencies:
++ @ai-sdk/openai 3.0.33
++ @ai-sdk/react 3.0.102
++ @aws-sdk/client-s3 3.998.0
++ @exodus/bytes 1.14.1
++ @radix-ui/react-avatar 1.1.11
++ @radix-ui/react-collapsible 1.1.12
++ @radix-ui/react-dialog 1.1.15
++ @radix-ui/react-label 2.1.8
++ @radix-ui/react-popover 1.1.15
++ @radix-ui/react-separator 1.1.8
++ @radix-ui/react-slot 1.2.4
++ @radix-ui/react-tooltip 1.2.8
++ @supabase/ssr 0.5.2 (0.8.0 is available)
++ @supabase/supabase-js 2.97.0
++ ai 6.0.100
++ class-variance-authority 0.7.1
++ clsx 2.1.1
++ cmdk 1.1.1
++ help 3.0.2
++ jsdom 27.4.0 (28.1.0 is available)
++ lucide-react 0.553.0 (0.575.0 is available)
++ next 16.1.1 (16.1.6 is available)
++ react 19.2.3 (19.2.4 is available)
++ react-dom 19.2.3 (19.2.4 is available)
++ react-timeago 8.3.0
++ styled-components 6.3.11
++ tailwind-merge 3.5.0
++ tar 7.5.9
++ uuid 10.0.0 (13.0.0 is available)
++ vercel 50.23.2
++ zod 4.3.6
+
+devDependencies:
++ @tailwindcss/postcss 4.2.1
++ @types/node 20.19.33 (25.3.0 is available)
++ @types/react 19.2.14
++ @types/react-dom 19.2.3
++ @types/uuid 10.0.0 (11.0.0 is available)
++ baseline-browser-mapping 2.10.0
++ eslint 9.39.3 (10.0.2 is available)
++ eslint-config-next 16.1.1 (16.1.6 is available)
++ path-match 1.2.4 deprecated
++ prettier 3.8.1
++ tailwindcss 4.2.1
++ tw-animate-css 1.4.0
++ typescript 5.9.3
+
+╭ Warning ───────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                            │
+│   Ignored build scripts: esbuild, sharp, unrs-resolver.                                    │
+│   Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.   │
+│                                                                                            │
+╰────────────────────────────────────────────────────────────────────────────────────────────╯
+
+Done in 6.9s using pnpm v10.8.1

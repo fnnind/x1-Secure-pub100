@@ -1,0 +1,15 @@
+============== 2026-Feb-22 ==============
+% pnpm  supabase migration list                             
+Initialising login role...
+Connecting to remote database...
+
+   Local          | Remote         | Time (UTC)          
+  ----------------|----------------|---------------------
+   20260219100000 | 20260219100000 | 2026-02-19 10:00:00 
+   20260219120000 | 20260219120000 | 2026-02-19 12:00:00 
+
+% pnpx supabase db push      
+Initialising login role...
+Connecting to remote database...
+Remote database is up to date.
+=========================================================

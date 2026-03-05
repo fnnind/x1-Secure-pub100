@@ -1,0 +1,125 @@
+# Implement Arxiv UI
+
+  Plan: Uprev Publication Landing Page to r1x-UI-v2 Layout                                                                  
+                                                                                                                            
+  What the design shows (vs. what exists today)                                                                             
+                                                            
+  ┌─────────────────────┬─────────────────────────────────────┬────────────────────────────────────────────────────────┐
+  │        Area         │               Current               │                   Target (r1x-UI-v2)                   │
+  ├─────────────────────┼─────────────────────────────────────┼────────────────────────────────────────────────────────┤
+  │ Banner header       │ Image + title + authors + abstract  │ Category breadcrumb path · arXiv-style ID badge ·      │
+  │                     │ preview + action buttons            │ Large title · Authors (no image thumb)                 │
+  ├─────────────────────┼─────────────────────────────────────┼────────────────────────────────────────────────────────┤
+  │ Content structure   │ Banner → 2-col (main + sidebar)     │ Banner → Tab bar → Tab content (active tab =           │
+  │                     │ flat layout                         │ Papers/Q&A/etc.) + Right sidebar                       │
+  ├─────────────────────┼─────────────────────────────────────┼────────────────────────────────────────────────────────┤
+  │ Tab navigation      │ None                                │ Papers · Conferences · Q&A · Details · References      │
+  ├─────────────────────┼─────────────────────────────────────┼────────────────────────────────────────────────────────┤
+  │ AI Summary          │ None                                │ Collapsible AI Summary card below header, above        │
+  │                     │                                     │ comments                                               │
+  ├─────────────────────┼─────────────────────────────────────┼────────────────────────────────────────────────────────┤
+  │ Comments/Discussion │ Not on pub page (lives in subxeuron │ Inline comment thread on the publication page itself   │
+  │                     │  posts)                             │ (with votes, avatars, nested replies)                  │
+  ├─────────────────────┼─────────────────────────────────────┼────────────────────────────────────────────────────────┤
+  │ Right sidebar       │ Creator card + Linked SubXeurons    │ Topic/tag search box + tag cloud of paper topics       │
+  ├─────────────────────┼─────────────────────────────────────┼────────────────────────────────────────────────────────┤
+  │ Category/venue path │ Not shown                           │ Breadcrumb: Computer Science > Computation and         │
+  │                     │                                     │ Language                                               │
+  ├─────────────────────┼─────────────────────────────────────┼────────────────────────────────────────────────────────┤
+  │ Publication ID      │ Type badge (e.g. "Preprint")        │ arXiv-style ID badge (arXiv:1412.3756v9 [cs.CL])       │
+  │ badge               │                                     │                                                        │
+  └─────────────────────┴─────────────────────────────────────┴────────────────────────────────────────────────────────┘
+
+  ---
+  Tasks
+
+  Task 1 — Header/Banner Redesign (PublicationBanner.tsx)
+
+  - Remove thumbnail image from the header (image moves to sidebar or removed)
+  - Add category breadcrumb row: {field} > {subfield} using existing description or a new category/venue field on
+  AppPublication
+  - Replace type badge with arXiv-style ID badge: arXiv:{doi} [{category}] if doi present, else fallback to type label
+  - Keep title (h1) and authors row as-is but increase prominence
+  - Remove abstract preview from banner (abstract moves to Details tab)
+  - Remove action buttons from banner (move to tab bar or Details tab)
+
+  Task 2 — Tab Navigation Component (new PublicationTabs.tsx)
+
+  - Client component with tabs: Papers · Conferences · Q&A · Details · References
+  - Tab state managed via ?tab= URL search param (SSR-friendly, bookmarkable)
+  - Each tab renders a different content section below it
+  - Active tab styled with underline/accent, inactive muted
+
+  Task 3 — Tab Content Panels
+
+  - Papers tab (default): posts/discussions tied to this publication (reuse PostsList pattern)
+  - Conferences tab: events list (currently in events section — relocate here from the flat layout)
+  - Q&A tab: dedicated Q&A thread — questions + answers scoped to the publication
+  - Details tab: abstract, DOI, source URL, PDF link, published year, tags, creator card, linked SubXeurons (all the current
+   sidebar + abstract content moved here)
+  - References tab: placeholder or source_url-based external links
+
+  Task 4 — AI Summary Section (new PublicationAISummary.tsx)
+
+  - New card component that renders below the banner, above tab content
+  - Initially collapsed ("Show AI Summary" toggle) to save space
+  - Content: first displays a truncated summary; expand to show full
+  - Data source: new ai_summary text field on publication table (migration needed), or derive from abstract with a
+  client-side call
+  - Phase 1 (no-AI fallback): render abstract with a "Summary" label if ai_summary is null
+
+  Task 5 — Comments Thread on Publication (PublicationComments.tsx)
+
+  - Comments shown inline below AI Summary in the Papers/default tab
+  - Reuse existing CommentList + CommentInput components scoped to entity_type='publication'/entity_id
+  - Comments need to be scoped to publication (currently post_comment table references post_id — need either a new
+  publication_comment table or repurpose via a pinned post per publication)
+  - Show comment count in tab label: Q&A (75)
+
+  Task 6 — Right Sidebar Redesign (PublicationSidebar.tsx)
+
+  - Replace creator card + linked subxeurons with:
+    - Topic search box — <input> that filters/searches within the publication's tags
+    - Tag cloud — clickable tags styled as pill badges linking to /search?query={tag}
+    - Keep "Linked SubXeurons" below tag cloud (lower priority, smaller)
+
+  Task 7 — Page Layout Restructure (app/(app)/p/[slug]/page.tsx)
+
+  - New layout: <Banner> → <AISummary> → <TabBar> → <div flex> [<TabContent> | <PublicationSidebar>]`
+  - Remove standalone events/abstract/tags sections (absorbed into tabs)
+  - Pass tab search param to determine which panel to render server-side
+
+  Task 8 — Schema/DB: ai_summary field (optional, Phase 2)
+
+  - Migration: ALTER TABLE publication ADD COLUMN ai_summary text;
+  - AppPublication type update to include ai_summary?: string | null
+  - Mapper update in lib/supabase/mappers.ts
+
+  ---
+  Dependency Order
+
+  Task 1 (Banner)     ← independent, do first
+  Task 2 (Tabs)       ← independent
+  Task 6 (Sidebar)    ← independent
+  Task 3 (Tab panels) ← depends on Task 2
+  Task 4 (AI Summary) ← independent (phase 1 uses abstract)
+  Task 5 (Comments)   ← depends on Task 3 (Q&A tab placement) + schema decision
+  Task 7 (Page layout)← depends on Tasks 1–6 all done
+  Task 8 (DB schema)  ← optional, unblocks Task 4 Phase 2
+
+  Open Questions Before Coding
+
+  1. Comment scoping — should publication-level comments reuse the existing post_comment table (via a pinned post per
+  publication) or get a new publication_comment table?
+  2. ai_summary field — generate via LLM API call on creation, or manually authored, or just show abstract with a different
+  label for now?
+  3. Category/breadcrumb data — is this a new DB field (e.g. field_of_study, subfield) or derived from existing
+  tags/description?
+  4. Conferences tab — should it show only events for this publication, or also external conference links referenced in the
+  paper?
+
+✻ Worked for 1m 29s                       
+
+❯ comment scoping: use existing.   ai_summary: show abstract with a different label for now.  (3) category: is a new DB     
+   filed, (4) conference tab: show only events for this publication. Please examine pros and cons on layout such that      
+  it is mobile-device friendly and desktop web friendly                                       
