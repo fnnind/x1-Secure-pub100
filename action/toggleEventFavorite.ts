@@ -2,6 +2,7 @@
 
 import { getUser } from '@/lib/supabase/user'
 import { addEventFavorite, removeEventFavorite, isEventFavoritedByUser } from '@/lib/supabase/event-favorites'
+import { revalidatePath } from 'next/cache'
 
 export type ToggleEventFavoriteResult =
   | { favorited: boolean }
@@ -15,10 +16,14 @@ export async function toggleEventFavorite(eventId: string): Promise<ToggleEventF
     const currently = await isEventFavoritedByUser(user._id, eventId)
     if (currently) {
       const result = await removeEventFavorite(user._id, eventId)
-      return 'error' in result ? result : { favorited: false }
+      if ('error' in result) return result
+      revalidatePath('/', 'layout')
+      return { favorited: false }
     }
     const result = await addEventFavorite(user._id, eventId)
-    return 'error' in result ? result : { favorited: true }
+    if ('error' in result) return result
+    revalidatePath('/', 'layout')
+    return { favorited: true }
   } catch (err) {
     console.error('toggleEventFavorite action error:', err)
     return { error: 'Failed to update favorite' }

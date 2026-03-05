@@ -3,6 +3,7 @@
 import { getPostById } from "@/lib/supabase/posts";
 import { deletePost as deletePostDb } from "@/lib/supabase/mutations";
 import { getUser } from "@/lib/supabase/user";
+import { revalidatePath } from "next/cache";
 
 export const deletePost = async (postId: string) => {
     const user = await getUser();
@@ -20,5 +21,6 @@ export const deletePost = async (postId: string) => {
 
     const result = await deletePostDb(postId);
     if ("error" in result) return { error: result.error };
+    revalidatePath('/', 'layout')
     return { success: "Post deleted successfully" };
 }

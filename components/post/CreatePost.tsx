@@ -21,7 +21,6 @@ function CreatePost() {
     // if we're in a subXeuron, redirect to create post with that subXeuron pre-selected
     if (subXeuronName) {
       router.push(`/create-post?subxeuron=${subXeuronName}`);
-      console.log(`router.push to /create-post with subxeuron set to ${subXeuronName}`);
     } else {
       router.push("/create-post")
     }

@@ -6,6 +6,34 @@ import { generateId } from '@/lib/utils/id'
 
 export type ImageData = { base64: string; filename: string; contentType: string } | null
 
+// Shared source URL allowlist used for both subxeurons and publications
+const ALLOWED_SOURCE_HOSTS = [
+  'doi.org',
+  'arxiv.org',
+  'nature.com',
+  'pubmed.ncbi.nlm.nih.gov',
+  'ncbi.nlm.nih.gov',
+  'biorxiv.org',
+  'medrxiv.org',
+  'sciencedirect.com',
+  'springer.com',
+  'wiley.com',
+  'ieee.org',
+  'acm.org',
+]
+
+function validateSourceUrl(sourceUrl: string): string | null {
+  try {
+    const host = new URL(sourceUrl).hostname.replace(/^www\./, '')
+    if (!ALLOWED_SOURCE_HOSTS.some((h) => host === h || host.endsWith(`.${h}`))) {
+      return `Source URL host not allowed. Allowed: ${ALLOWED_SOURCE_HOSTS.join(', ')}`
+    }
+    return null
+  } catch {
+    return 'Invalid source URL'
+  }
+}
+
 export async function createSubxeuron(
   name: string,
   moderatorId: string,
@@ -15,6 +43,12 @@ export async function createSubxeuron(
   customDescription?: string,
   pdfUrl?: string
 ): Promise<{ subxeuron: AppSubxeuron } | { error: string }> {
+  // Validate source URL on the server — cannot be bypassed via direct Server Action call
+  if (sourceUrl) {
+    const urlError = validateSourceUrl(sourceUrl)
+    if (urlError) return { error: urlError }
+  }
+
   const supabase = await createClient()
   const slug = (customSlug ?? name.toLowerCase().replace(/\s+/g, '-')).slice(0, 200)
 
@@ -147,20 +181,6 @@ export async function deleteComment(commentId: string) {
 // ─── Publication mutations ─────────────────────────────────────────────────────
 
 const DOI_REGEX = /^10\.\d{4,}(\.\d+)*\/\S+/
-const ALLOWED_SOURCE_HOSTS = [
-  'doi.org',
-  'arxiv.org',
-  'nature.com',
-  'pubmed.ncbi.nlm.nih.gov',
-  'ncbi.nlm.nih.gov',
-  'biorxiv.org',
-  'medrxiv.org',
-  'sciencedirect.com',
-  'springer.com',
-  'wiley.com',
-  'ieee.org',
-  'acm.org',
-]
 
 export async function createPublication(params: {
   title: string
@@ -190,14 +210,8 @@ export async function createPublication(params: {
 
   // Validate source URL host
   if (params.sourceUrl) {
-    try {
-      const host = new URL(params.sourceUrl).hostname.replace(/^www\./, '')
-      if (!ALLOWED_SOURCE_HOSTS.some((h) => host === h || host.endsWith(`.${h}`))) {
-        return { error: `Source URL host not allowed. Allowed: ${ALLOWED_SOURCE_HOSTS.join(', ')}` }
-      }
-    } catch {
-      return { error: 'Invalid source URL' }
-    }
+    const urlError = validateSourceUrl(params.sourceUrl)
+    if (urlError) return { error: urlError }
   }
 
   // Check slug uniqueness

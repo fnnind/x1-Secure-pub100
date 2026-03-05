@@ -1,0 +1,24 @@
+P0 — Security
+- SEC-1: Server-side source URL validation in createSubxeuron 
+  - lib/supabase/mutations.ts
+  - Extracted validateSourceUrl() helper using ALLOWED_SOURCE_HOSTS (moved to top of file, shared with createPublication). createSubxeuron now validates sourceUrl server-side before any DB operation. A direct Server Action call can no longer bypass it.
+
+- SEC-2: HTML injection in email templates
+  - lib/email.ts — Added escapeHtml() function. All user-controlled values (commenterUsername, recipientUsername, contentTitle, commentSnippet, contentUrl, answererUsername, eventTitle, questionSnippet, answerSnippet, answerUrl) are now escaped before HTML injection in both email builders.
+
+P1 — Correctness + Performance
+- BUG-1: revalidatePath added to 9 Server Actions
+  - action/upvote.ts, action/downvote.ts, action/deletePost.ts, action/deleteComment.ts, action/createComment.ts, action/createPost.tsx, action/voteEventQA.ts, action/submitPollVote.ts, action/toggleEventFavorite.ts — All now call revalidatePath('/', 'layout') after successful mutations, purging the Next.js router cache.
+- PERF-1: Comment N+1 eliminated
+  - lib/supabase/comments.ts — getPostComments now uses 3 fixed queries total: (1) top-level comments, (2) batch replies via .in('parent_comment_id', commentIds), (3) all votes for all IDs via .in('comment_id', allIds). Previously: O(N×3 + M×3) queries for N comments with M replies.
+  - components/comment/Comment.tsx — Removed getCommentReplies call; now uses comment.replies (pre-fetched). Component no longer needs to be async.
+- PERF-2: Post vote double-fetch eliminated
+  - components/post/Post.tsx — When post.upvotes/post.downvotes are already populated (from aggregateVotes in feed queries), getPostVotes is skipped. Falls back to fetching only for standalone post renders.
+
+P2 — Bug
+- BUG-2: censorPost early return skipped DB write
+  - tools/tools.ts — Removed early return when isToBeReported === false. Now always applies title/body updates if provided, regardless of report status, then returns the appropriate message.
+
+P3 — Minor
+- MINOR-1: Debug console.log removed
+  - components/header/CreateSubXeuronButton.tsx — Removed 2 debug logs (lines 148, 210) - components/post/CreatePost.tsx — Removed 1 debug log (line 24)

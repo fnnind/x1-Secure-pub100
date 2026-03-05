@@ -1,5 +1,4 @@
 import type { AppComment } from "@/lib/supabase/types";
-import { getCommentReplies } from "@/lib/supabase/comments";
 import { UserCircle } from "lucide-react";
 import Image from "next/image";
 import TimeAgo from "../TimeAgo";
@@ -7,7 +6,7 @@ import CommentList from "./CommentList";
 import CommentReply from "./CommentReply";
 import PostVoteButtons from "../post/PostVoteButtons";
 
-async function Comment({
+function Comment({
   postId,
   comment,
   userId,
@@ -16,8 +15,8 @@ async function Comment({
   comment: AppComment;
   userId: string | null;
 }) {
-
-  const replies = await getCommentReplies(comment._id, userId);
+  // replies are pre-fetched by getPostComments — no extra DB call needed
+  const replies = comment.replies ?? [];
   const userVoteStatus = comment.votes?.voteStatus ?? null;
 
   return (

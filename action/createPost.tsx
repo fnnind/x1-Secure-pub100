@@ -12,6 +12,7 @@ import { censorPost, reportUser } from "@/tools/tools";
 import { generateText, ModelMessage } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { checkRateLimit } from "@/lib/utils/rateLimit";
+import { revalidatePath } from "next/cache";
 
 import { systemPrompt } from "@/tools/prompt";
 
@@ -117,6 +118,7 @@ export async function createPost({
     }
     // ---- END MODERATION STEP ----
 
+    revalidatePath('/', 'layout')
     return { post }
 
   } catch {

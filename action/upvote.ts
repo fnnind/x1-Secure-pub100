@@ -3,6 +3,7 @@
 import { getUser } from "@/lib/supabase/user";
 import { upvoteComment, upvotePost } from "@/lib/supabase/votes";
 import { checkRateLimit } from "@/lib/utils/rateLimit";
+import { revalidatePath } from "next/cache";
 
 export async function upvote(
     contentId: string,
@@ -19,9 +20,11 @@ export async function upvote(
 
     if (contentType === "comment") {
         const vote = await upvoteComment(contentId, user._id);
+        revalidatePath('/', 'layout')
         return { vote };
     } else {
         const vote = await upvotePost(contentId, user._id);
+        revalidatePath('/', 'layout')
         return { vote };
     }
 }

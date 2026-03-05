@@ -20,9 +20,6 @@ export const censorPost = tool({
       ),
   }),
   execute: async ({ postId, title, body, isToBeReported }) => {
-    if (!isToBeReported) {
-      return { success: true, message: `Post ${postId} is not reported` };
-    }
     const supabase = getServiceClient();
     const updates: { title?: string; body?: unknown; is_reported?: boolean } = {};
     if (typeof title === "string" && title.length > 0) updates.title = title;
@@ -36,7 +33,15 @@ export const censorPost = tool({
       ];
     }
     if (isToBeReported) updates.is_reported = true;
-    await supabase.from("post").update(updates).eq("id", postId);
+
+    // Apply updates if there is anything to change
+    if (Object.keys(updates).length > 0) {
+      await supabase.from("post").update(updates).eq("id", postId);
+    }
+
+    if (!isToBeReported) {
+      return { success: true, message: `Post ${postId} is not reported` };
+    }
     return { postId, censored: true, message: "Content has been censored" };
   },
 });

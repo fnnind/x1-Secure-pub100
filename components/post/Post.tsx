@@ -19,9 +19,12 @@ interface PostProps {
   userId: string | null;
 }
 
-// need 3 things from post: votes, vote, comments
+// votes, vote status, comments
 async function Post({ post, userId }: PostProps) {
-  const votes = await getPostVotes(post._id);
+  // Use pre-aggregated vote counts from feed query if available, otherwise fetch
+  const votes = (post.upvotes !== undefined && post.downvotes !== undefined)
+    ? { upvotes: post.upvotes, downvotes: post.downvotes, netScore: post.netScore ?? post.upvotes - post.downvotes }
+    : await getPostVotes(post._id);
   const vote = await getUserPostVoteStatus(post._id, userId);
   const comments = await getPostComments(post._id, userId);
 

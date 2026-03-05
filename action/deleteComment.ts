@@ -3,6 +3,7 @@
 import { getCommentById } from "@/lib/supabase/comments";
 import { deleteComment as deleteCommentDb } from "@/lib/supabase/mutations";
 import { getUser } from "@/lib/supabase/user";
+import { revalidatePath } from "next/cache";
 
 export const deleteComment = async (commentId: string) => {
     const user = await getUser();
@@ -20,5 +21,6 @@ export const deleteComment = async (commentId: string) => {
 
     const result = await deleteCommentDb(commentId);
     if ("error" in result) return { error: result.error };
+    revalidatePath('/', 'layout')
     return { success: "Comment deleted successfully" };
 }

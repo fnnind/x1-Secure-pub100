@@ -80,6 +80,15 @@ function baseLayout(body: string): string {
 </html>`
 }
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function formatDate(iso?: string): string {
   if (!iso) return 'just now'
   return new Date(iso).toLocaleString('en-US', {
@@ -105,17 +114,17 @@ export type CommentNotificationParams = {
 
 export function buildCommentNotificationEmail(p: CommentNotificationParams): EmailPayload {
   const articleLabel = p.contentType === 'event' ? 'event' : p.contentType === 'publication' ? 'publication' : p.contentType === 'subxeuron' ? 'SubXeuron' : 'post'
-  const subject = `${p.commenterUsername} commented on your ${articleLabel} — "${p.contentTitle}"`
+  const subject = `${escapeHtml(p.commenterUsername)} commented on your ${articleLabel} — "${escapeHtml(p.contentTitle)}"`
 
   const html = baseLayout(`
-    <p>Hi <strong>${p.recipientUsername}</strong>,</p>
+    <p>Hi <strong>${escapeHtml(p.recipientUsername)}</strong>,</p>
     <p>
-      <strong>${p.commenterUsername}</strong> left a comment on your ${articleLabel}
-      <strong>"${p.contentTitle}"</strong> on ${formatDate(p.commentedAt)}:
+      <strong>${escapeHtml(p.commenterUsername)}</strong> left a comment on your ${articleLabel}
+      <strong>"${escapeHtml(p.contentTitle)}"</strong> on ${formatDate(p.commentedAt)}:
     </p>
-    <div class="snippet">${truncate(p.commentSnippet)}</div>
+    <div class="snippet">${escapeHtml(truncate(p.commentSnippet))}</div>
     <p>Jump in to continue the conversation:</p>
-    <a class="cta" href="${p.contentUrl}">View comment →</a>
+    <a class="cta" href="${escapeHtml(p.contentUrl)}">View comment →</a>
   `)
 
   return { to: p.recipientEmail, subject, html }
@@ -133,19 +142,19 @@ export type AnswerNotificationParams = {
 }
 
 export function buildAnswerNotificationEmail(p: AnswerNotificationParams): EmailPayload {
-  const subject = `${p.answererUsername} answered your question in "${p.eventTitle}"`
+  const subject = `${escapeHtml(p.answererUsername)} answered your question in "${escapeHtml(p.eventTitle)}"`
 
   const html = baseLayout(`
-    <p>Hi <strong>${p.recipientUsername}</strong>,</p>
+    <p>Hi <strong>${escapeHtml(p.recipientUsername)}</strong>,</p>
     <p>
-      <strong>${p.answererUsername}</strong> answered your question in the event
-      <strong>"${p.eventTitle}"</strong> on ${formatDate(p.answeredAt)}:
+      <strong>${escapeHtml(p.answererUsername)}</strong> answered your question in the event
+      <strong>"${escapeHtml(p.eventTitle)}"</strong> on ${formatDate(p.answeredAt)}:
     </p>
     <p style="color:#6b7280;font-size:13px;margin-bottom:4px;">Your question:</p>
-    <div class="snippet">${truncate(p.questionSnippet)}</div>
+    <div class="snippet">${escapeHtml(truncate(p.questionSnippet))}</div>
     <p style="color:#6b7280;font-size:13px;margin-bottom:4px;">Their answer:</p>
-    <div class="snippet">${truncate(p.answerSnippet)}</div>
-    <a class="cta" href="${p.answerUrl}">View answer →</a>
+    <div class="snippet">${escapeHtml(truncate(p.answerSnippet))}</div>
+    <a class="cta" href="${escapeHtml(p.answerUrl)}">View answer →</a>
   `)
 
   return { to: p.recipientEmail, subject, html }

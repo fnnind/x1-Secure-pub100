@@ -5,6 +5,7 @@ import { getUser } from "@/lib/supabase/user";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail, buildCommentNotificationEmail } from "@/lib/email";
 import { checkRateLimit } from "@/lib/utils/rateLimit";
+import { revalidatePath } from "next/cache";
 
 export async function createComment(
   postId: string,
@@ -32,6 +33,7 @@ export async function createComment(
     // Fire-and-forget email notification to post author
     sendNotifyPostAuthor({ postId, commenterUsername: user.username, commentContent: content }).catch(() => {});
 
+    revalidatePath('/', 'layout')
     return result;
 
   } catch (error) {

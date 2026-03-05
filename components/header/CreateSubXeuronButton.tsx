@@ -145,8 +145,6 @@ function CreateSubXeuronButton() {
   const handleCreateSubXeuron = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    console.log("start to create subXeuron")
-
     if (!name.trim()) {
       setErrorMessage("SubXeuron name is required");
       return;
@@ -206,8 +204,6 @@ function CreateSubXeuronButton() {
           description.trim() || undefined,
           pdfUrl
         );
-
-        console.log("SubXeuron created:", result);
 
         if ("error" in result && result.error) {
           setErrorMessage(result.error);
