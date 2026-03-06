@@ -5,12 +5,13 @@ import XeuronLogoOnly from '@/images/XeuronLogoOnly.png'
 import { useUser } from '@/lib/supabase/auth-context'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { ChevronLeftIcon, MenuIcon } from 'lucide-react'
+import { ChevronLeftIcon, MenuIcon, UserCircle2 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useSidebar } from '../ui/sidebar'
 import { Button } from '../ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
+import { toPublicImageUrl } from '@/lib/image'
 import {
   Popover,
   PopoverContent,
@@ -64,18 +65,31 @@ function Header() {
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="flex items-center gap-2 rounded-full ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                className="flex items-center gap-2 rounded-full px-1 ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.imageUrl || undefined} alt={user.username} />
-                  <AvatarFallback className="text-xs">
-                    {user.username?.slice(0, 2).toUpperCase() || 'U'}
+                  <AvatarImage
+                    src={user.imageUrl ? toPublicImageUrl(user.imageUrl) : undefined}
+                    alt={user.username}
+                  />
+                  <AvatarFallback>
+                    <UserCircle2 className="h-6 w-6 text-muted-foreground" />
                   </AvatarFallback>
                 </Avatar>
+                <span className="hidden text-sm font-medium sm:block">
+                  {user.username?.slice(0, 1).toUpperCase()}
+                </span>
               </button>
             </PopoverTrigger>
-            <PopoverContent className="w-48 p-2" align="end">
+            <PopoverContent className="w-52 p-2" align="end">
               <div className="mb-2 px-2 py-1 text-sm font-medium">{user.username}</div>
+              <Link
+                href="/settings/profile"
+                className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-muted"
+              >
+                Edit Profile
+              </Link>
+              <div className="my-1 border-t border-border" />
               <Button
                 variant="outline"
                 size="sm"

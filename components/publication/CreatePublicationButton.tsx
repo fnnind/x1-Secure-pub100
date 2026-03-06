@@ -109,9 +109,12 @@ export function CreatePublicationButton() {
       <DialogTrigger
         className="w-full p-2 pl-5 flex items-center rounded-md cursor-pointer bg-black text-white hover:bg-black transition-all duration-200 disabled:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         disabled={!user}
+        suppressHydrationWarning
       >
         <Plus className="mr-2 h-4 w-4 shrink-0" />
-        {user ? 'Create new Publication' : 'Sign in to create publication'}
+        <span suppressHydrationWarning>
+          {user ? 'Create new Publication' : 'Sign in to create publication'}
+        </span>
       </DialogTrigger>
 
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">

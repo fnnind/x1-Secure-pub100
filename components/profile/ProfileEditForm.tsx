@@ -1,11 +1,15 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
+import { ImageIcon, UserCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { updateUserProfileAction } from '@/action/updateUserProfile'
+import { uploadAvatar } from '@/action/uploadAvatar'
+import { toPublicImageUrl } from '@/lib/image'
 import type { AppUser, UserCategory } from '@/lib/supabase/types'
 
 const CATEGORY_LABELS: Record<UserCategory, string> = {
@@ -31,6 +35,14 @@ export function ProfileEditForm({ profile }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
+  // Avatar state
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(
+    profile.imageUrl ? toPublicImageUrl(profile.imageUrl) : null
+  )
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [avatarError, setAvatarError] = useState<string | null>(null)
+
   const [firstName, setFirstName] = useState(profile.firstName ?? '')
   const [lastName, setLastName] = useState(profile.lastName ?? '')
   const [nickname, setNickname] = useState(profile.nickname ?? '')
@@ -39,6 +51,40 @@ export function ProfileEditForm({ profile }: Props) {
   const [category, setCategory] = useState<UserCategory | ''>(profile.category ?? '')
   const [innovationSummary, setInnovationSummary] = useState(profile.innovationSummary ?? '')
   const [isProfilePublic, setIsProfilePublic] = useState(profile.isProfilePublic ?? false)
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setAvatarError(null)
+    setIsUploadingAvatar(true)
+
+    // Show local preview immediately
+    const reader = new FileReader()
+    reader.onload = () => setAvatarPreview(reader.result as string)
+    reader.readAsDataURL(file)
+
+    // Upload to S3 via server action
+    const dataUrl = await new Promise<string>((resolve) => {
+      const r = new FileReader()
+      r.onload = () => resolve(r.result as string)
+      r.readAsDataURL(file)
+    })
+
+    const result = await uploadAvatar(dataUrl, file.name)
+    setIsUploadingAvatar(false)
+
+    if ('error' in result) {
+      setAvatarError(result.error)
+      setAvatarPreview(profile.imageUrl ? toPublicImageUrl(profile.imageUrl) : null)
+    } else {
+      setAvatarPreview(result.url)
+      router.refresh()
+    }
+
+    // Reset input so the same file can be re-selected
+    if (avatarInputRef.current) avatarInputRef.current.value = ''
+  }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -70,6 +116,50 @@ export function ProfileEditForm({ profile }: Props) {
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && <p className="text-sm text-red-500">{error}</p>}
       {success && <p className="text-sm text-green-600">Profile updated successfully.</p>}
+
+      {/* Avatar upload */}
+      <div className="flex items-center gap-5">
+        <div className="relative h-20 w-20 shrink-0">
+          {avatarPreview ? (
+            <Image
+              src={avatarPreview}
+              alt="Profile picture"
+              fill
+              className="rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+              <UserCircle2 className="h-12 w-12 text-muted-foreground" />
+            </div>
+          )}
+          {isUploadingAvatar && (
+            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
+              <span className="text-xs text-white">Uploading…</span>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <label
+            htmlFor="avatar-upload"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+          >
+            <ImageIcon className="h-4 w-4" />
+            {avatarPreview ? 'Change photo' : 'Upload photo'}
+          </label>
+          <input
+            id="avatar-upload"
+            ref={avatarInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarChange}
+            disabled={isUploadingAvatar}
+          />
+          <p className="text-xs text-muted-foreground">JPEG, PNG, WebP or GIF · max 8 MB</p>
+          {avatarError && <p className="text-xs text-red-500">{avatarError}</p>}
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
