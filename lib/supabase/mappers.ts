@@ -3,10 +3,21 @@ import type {
   AppPublication, AppPublicationAuthor, AppPublicationCollaborator,
   AppEvent, AppEventUrl, AppEventQuestion, AppEventAnswer,
   AppPoll, AppPollOption,
-  PublicationType, EventType,
+  PublicationType, EventType, UserCategory,
 } from './types'
 
 type DbUser = { id: string; username: string; email?: string; image_url?: string | null }
+
+type DbUserFull = DbUser & {
+  first_name?: string | null
+  last_name?: string | null
+  nickname?: string | null
+  interests?: string[] | null
+  expertise?: string[] | null
+  category?: string | null
+  innovation_summary?: string | null
+  is_profile_public?: boolean | null
+}
 type DbSubxeuron = {
   id: string
   title: string
@@ -44,6 +55,24 @@ export function mapUser(r: DbUser | null | undefined): AppUser | null {
     username: r.username,
     email: r.email,
     imageUrl: r.image_url ?? undefined,
+  }
+}
+
+export function mapUserFull(r: DbUserFull | null | undefined): AppUser | null {
+  if (!r) return null
+  return {
+    _id: r.id,
+    username: r.username,
+    email: r.email,
+    imageUrl: r.image_url ?? undefined,
+    firstName: r.first_name ?? null,
+    lastName: r.last_name ?? null,
+    nickname: r.nickname ?? null,
+    interests: r.interests ?? [],
+    expertise: r.expertise ?? [],
+    category: (r.category as UserCategory) ?? null,
+    innovationSummary: r.innovation_summary ?? null,
+    isProfilePublic: r.is_profile_public ?? false,
   }
 }
 

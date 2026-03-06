@@ -3,6 +3,7 @@ import { mapSubxeuron, mapPublication } from './mappers'
 import type { AppSubxeuron, AppPublication, PublicationType } from './types'
 import { uploadImageToS3 } from '@/lib/s3'
 import { generateId } from '@/lib/utils/id'
+import { z } from 'zod'
 
 export type ImageData = { base64: string; filename: string; contentType: string } | null
 
@@ -855,4 +856,73 @@ export async function reportContent(
   if (error) return { error: error.message }
   if (!data) return { error: 'Content not found' }
   return { result: data as boolean }
+}
+
+// ─── User profile update ──────────────────────────────────────────────────────
+
+const USER_CATEGORIES = [
+  'researcher',
+  'academic',
+  'industry_professional',
+  'independent_scientist',
+  'builder',
+  'engineer',
+  'professional',
+  'curiosity',
+  'intellect',
+  'other',
+] as const
+
+function parseTags(raw: string): string[] {
+  return raw
+    .split(',')
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0)
+    .slice(0, 50) // hard cap on number of tags
+}
+
+const updateUserProfileSchema = z.object({
+  firstName: z.string().max(100).optional().nullable(),
+  lastName: z.string().max(100).optional().nullable(),
+  nickname: z.string().min(1).max(50).optional().nullable(),
+  // interests/expertise arrive as comma-separated strings, stored as text[]
+  interestsRaw: z.string().max(1000).optional().nullable(),
+  expertiseRaw: z.string().max(1000).optional().nullable(),
+  category: z.enum(USER_CATEGORIES).optional().nullable(),
+  innovationSummary: z.string().max(1000).optional().nullable(),
+  isProfilePublic: z.boolean().optional(),
+})
+
+export type UpdateUserProfileInput = z.infer<typeof updateUserProfileSchema>
+
+export async function updateUserProfile(
+  userId: string,
+  input: UpdateUserProfileInput
+): Promise<{ success: true } | { error: string }> {
+  const parsed = updateUserProfileSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.errors[0]?.message ?? 'Invalid input' }
+  }
+
+  const {
+    firstName, lastName, nickname, interestsRaw, expertiseRaw,
+    category, innovationSummary, isProfilePublic,
+  } = parsed.data
+
+  const updates: Record<string, unknown> = {}
+  if (firstName !== undefined) updates.first_name = firstName?.trim() || null
+  if (lastName !== undefined) updates.last_name = lastName?.trim() || null
+  if (nickname !== undefined) updates.nickname = nickname?.trim() || null
+  if (interestsRaw !== undefined) updates.interests = interestsRaw ? parseTags(interestsRaw) : []
+  if (expertiseRaw !== undefined) updates.expertise = expertiseRaw ? parseTags(expertiseRaw) : []
+  if (category !== undefined) updates.category = category || null
+  if (innovationSummary !== undefined) updates.innovation_summary = innovationSummary?.trim() || null
+  if (isProfilePublic !== undefined) updates.is_profile_public = isProfilePublic
+
+  if (Object.keys(updates).length === 0) return { success: true }
+
+  const supabase = await createClient()
+  const { error } = await supabase.from('user').update(updates).eq('id', userId)
+  if (error) return { error: error.message }
+  return { success: true }
 }

@@ -1,4 +1,6 @@
 import { createClient } from './server'
+import { mapUserFull } from './mappers'
+import type { AppUser } from './types'
 
 export interface UserResult {
   _id: string
@@ -84,17 +86,16 @@ export async function getUser(): Promise<UserResult | { error: string }> {
   }
 }
 
-export async function getUserByUsername(
-  username: string
-): Promise<{ _id: string; username: string; imageUrl: string | null } | null> {
+export async function getUserByUsername(username: string): Promise<AppUser | null> {
   const supabase = await createClient()
   const { data } = await supabase
     .from('user')
-    .select('id, username, image_url')
+    .select(
+      'id, username, email, image_url, first_name, last_name, nickname, interests, expertise, category, innovation_summary, is_profile_public'
+    )
     .eq('username', username)
     .maybeSingle()
-  if (!data) return null
-  return { _id: data.id, username: data.username ?? '', imageUrl: data.image_url ?? null }
+  return mapUserFull(data)
 }
 
 /** Create or ensure user profile (for server use; getUser already does upsert). */

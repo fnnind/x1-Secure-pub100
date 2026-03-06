@@ -2,11 +2,32 @@
  * App-facing shapes (camelCase, _id). Mapped from Supabase snake_case / id in the data layer.
  */
 
+export type UserCategory =
+  | 'researcher'
+  | 'academic'
+  | 'industry_professional'
+  | 'independent_scientist'
+  | 'builder'
+  | 'engineer'
+  | 'professional'
+  | 'curiosity'
+  | 'intellect'
+  | 'other'
+
 export type AppUser = {
   _id: string
   username: string
   email?: string
   imageUrl?: string | null
+  // Extended profile fields — populated only by mapUserFull (getUserByUsername)
+  firstName?: string | null
+  lastName?: string | null
+  nickname?: string | null
+  interests?: string[]
+  expertise?: string[]
+  category?: UserCategory | null
+  innovationSummary?: string | null
+  isProfilePublic?: boolean
 }
 
 export type AppSubxeuron = {

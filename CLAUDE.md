@@ -66,3 +66,12 @@ User-uploaded images go to AWS S3 via `lib/s3.ts`. Supabase storage bucket is al
 - Supabase tables use `snake_case`; app types use `camelCase` with `_id` (not `id`) for primary keys.
 - Soft-delete pattern: posts/comments are never hard-deleted; `is_deleted: true` + content replaced with `[DELETED]`.
 - Publication source URLs are validated against an allowlist of academic domains (arxiv, doi.org, nature.com, etc.) in `mutations.ts`.
+
+## Engineering Plans and Summaries
+
+**Always write session plans and summaries to `./ENG_DIR/SUMMARY/`** as markdown files, prefixed with a timestamp in the format `YYYYMMDDHHMMSS` (e.g., `20260305120000_session_summary.md`).
+
+This applies to:
+- End-of-session summaries
+- Feature or architectural plans before implementation
+- Any significant design decision documents
