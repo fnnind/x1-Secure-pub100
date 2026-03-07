@@ -24,12 +24,24 @@ export default function LoginPage() {
     e.preventDefault()
     setMessage(null)
     setIsLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     setIsLoading(false)
     if (error) {
-      setMessage({ type: 'error', text: error.message })
+      console.error('[login] signInWithPassword error', {
+        message: error.message,
+        status:  (error as { status?: number }).status,
+        code:    (error as { code?: string }).code,
+        name:    error.name,
+      })
+      const detail = [
+        error.message,
+        (error as { code?: string }).code  ? `code: ${(error as { code?: string }).code}`   : null,
+        (error as { status?: number }).status ? `status: ${(error as { status?: number }).status}` : null,
+      ].filter(Boolean).join(' · ')
+      setMessage({ type: 'error', text: detail })
       return
     }
+    console.log('[login] signInWithPassword success', { userId: data.user?.id, email: data.user?.email })
     router.push(redirectTo)
     router.refresh()
   }
