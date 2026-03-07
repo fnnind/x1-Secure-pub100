@@ -1,10 +1,11 @@
 'use client'
 
-import { createClient } from '@/lib/supabase/client'
+import { signInWithPassword, sendMagicLink } from '@/action/signIn'
 import { safeRedirect } from '@/lib/utils/redirect'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,31 +18,18 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-
-  const supabase = createClient()
+  const [showPassword, setShowPassword] = useState(false)
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault()
     setMessage(null)
     setIsLoading(true)
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const result = await signInWithPassword(email, password)
     setIsLoading(false)
-    if (error) {
-      console.error('[login] signInWithPassword error', {
-        message: error.message,
-        status:  (error as { status?: number }).status,
-        code:    (error as { code?: string }).code,
-        name:    error.name,
-      })
-      const detail = [
-        error.message,
-        (error as { code?: string }).code  ? `code: ${(error as { code?: string }).code}`   : null,
-        (error as { status?: number }).status ? `status: ${(error as { status?: number }).status}` : null,
-      ].filter(Boolean).join(' · ')
-      setMessage({ type: 'error', text: detail })
+    if (result.error) {
+      setMessage({ type: 'error', text: result.error })
       return
     }
-    console.log('[login] signInWithPassword success', { userId: data.user?.id, email: data.user?.email })
     router.push(redirectTo)
     router.refresh()
   }
@@ -54,13 +42,10 @@ export default function LoginPage() {
       return
     }
     setIsLoading(true)
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}` },
-    })
+    const result = await sendMagicLink(email, redirectTo)
     setIsLoading(false)
-    if (error) {
-      setMessage({ type: 'error', text: error.message })
+    if (result.error) {
+      setMessage({ type: 'error', text: result.error })
       return
     }
     setMessage({ type: 'success', text: 'Check your email for the sign-in link.' })
@@ -92,13 +77,23 @@ export default function LoginPage() {
               Forgot password?
             </Link>
           </div>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1"
-          />
+          <div className="relative mt-1">
+            <Input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
         </div>
         {message && (
           <p className={message.type === 'error' ? 'text-red-600 text-sm' : 'text-green-600 text-sm'}>

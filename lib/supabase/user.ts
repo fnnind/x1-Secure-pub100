@@ -59,18 +59,26 @@ export async function getUser(): Promise<UserResult | { error: string }> {
 
     const { data: newProfile, error: insertError } = await supabase
       .from('user')
-      .insert({
-        id: authUser.id,
-        username: parseUsername(username),
-        email: email || `${authUser.id}@placeholder.local`,
-        image_url: imageUrl || null,
-        joined_at: new Date().toISOString(),
-      })
+      .upsert(
+        {
+          id: authUser.id,
+          username: parseUsername(username),
+          email: email || `${authUser.id}@placeholder.local`,
+          image_url: imageUrl || null,
+          joined_at: new Date().toISOString(),
+        },
+        { onConflict: 'id', ignoreDuplicates: false }
+      )
       .select('id, username, email, image_url')
       .single()
 
     if (insertError || !newProfile) {
-      console.error('addUser error:', insertError)
+      console.error('addUser error:', {
+        message: insertError?.message,
+        code: insertError?.code,
+        details: insertError?.details,
+        hint: insertError?.hint,
+      })
       return { error: 'Failed to create user profile' }
     }
 

@@ -1,9 +1,10 @@
 'use client'
 
-import { createClient } from '@/lib/supabase/client'
+import { signUp } from '@/action/signUp'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -15,8 +16,7 @@ export default function SignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-
-  const supabase = createClient()
+  const [showPassword, setShowPassword] = useState(false)
 
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault()
@@ -32,26 +32,15 @@ export default function SignUpPage() {
     }
 
     setIsLoading(true)
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: {
-        emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback?next=/`,
-      },
-    })
+    const result = await signUp(email, password)
     setIsLoading(false)
 
-    if (error) {
-      setMessage({ type: 'error', text: error.message })
+    if (result.error) {
+      setMessage({ type: 'error', text: result.error })
       return
     }
 
-    if (data?.user?.identities?.length === 0) {
-      setMessage({ type: 'error', text: 'An account with this email already exists. Sign in instead.' })
-      return
-    }
-
-    if (data?.user && !data?.session) {
+    if (result.requiresConfirmation) {
       setMessage({
         type: 'success',
         text: 'Check your email to confirm your account, then sign in.',
@@ -59,10 +48,8 @@ export default function SignUpPage() {
       return
     }
 
-    if (data?.session) {
-      router.push('/')
-      router.refresh()
-    }
+    router.push('/')
+    router.refresh()
   }
 
   return (
@@ -83,29 +70,41 @@ export default function SignUpPage() {
         </div>
         <div>
           <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            placeholder="At least 6 characters"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1"
-            minLength={6}
-            required
-          />
+          <div className="relative mt-1">
+            <Input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="At least 6 characters"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="pr-10"
+              minLength={6}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
         </div>
         <div>
           <Label htmlFor="confirmPassword">Confirm password</Label>
-          <Input
-            id="confirmPassword"
-            type="password"
-            placeholder="Confirm password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="mt-1"
-            minLength={6}
-            required
-          />
+          <div className="relative mt-1">
+            <Input
+              id="confirmPassword"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="pr-10"
+              minLength={6}
+              required
+            />
+          </div>
         </div>
         {message && (
           <p
